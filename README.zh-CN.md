@@ -106,6 +106,9 @@ API_HOST=127.0.0.1
 - C.1.3 Asset Source 在 New Upload 旁增加 **New Multi Upload**；仅 Provider=Hunyuan 可用，其它 Provider 灰色禁用
 - C.1.4 前端串联多视图生成：最少 2 张（必须含正图），最多 8 张
 - C.1.5 单测覆盖 MultiViewImages 规范化与槽位校验
+- C.1.7 多视图弹层改为官网式空间布局（中心引导 + 四周视角槽位）
+- C.1.8 多视图支持「模型面数」选择（1.5m/1m/500k/50k，默认 1.5m），经 OpenAI 兼容 `submit` 传入 `FaceCount`
+- C.1.9 修正多视图罗盘布局：缩小槽位；CSS Grid 五行排布，顶图在上，左45°/正图/右45° 同一水平线，背图与底图依次向下不重叠
 
 推荐使用官方 **OpenAI 兼容接口**（控制台 API Key），无需本地 GPU：
 

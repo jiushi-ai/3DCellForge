@@ -105,6 +105,9 @@ API_HOST=127.0.0.1
 - C.1.3 Asset Source adds **New Multi Upload** next to New Upload; enabled only when Provider is Hunyuan, otherwise disabled
 - C.1.4 Frontend multi-view flow: min 2 images (front required), max 8
 - C.1.5 Unit tests cover MultiViewImages normalization and slot validation
+- C.1.7 Multi-view modal uses an official-style spatial layout (center guide + surrounding view slots)
+- C.1.8 Multi-view supports Face Count presets (1.5m/1m/500k/50k, default 1.5m) via OpenAI-compat `submit` field `FaceCount`
+- C.1.9 Multi-view compass layout fix: smaller slots; CSS Grid 5-row layout so top sits above left45/front/right45 (same row); back then bottom stacked without overlap
 
 Prefer the official **OpenAI-compatible** API (console API key). No local GPU required:
 

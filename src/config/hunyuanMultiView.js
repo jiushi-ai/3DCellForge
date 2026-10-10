@@ -18,6 +18,19 @@ export const HUNYUAN_MULTI_VIEW_MAX_IMAGES = 8
 export const HUNYUAN_MULTI_VIEW_MODEL = '3.1'
 
 /**
+ * 模型面数选项，对应官方 FaceCount（OpenAI 兼容 submit 直接传 FaceCount）。
+ * Face-count presets mapped to official FaceCount for OpenAI-compat submit.
+ */
+export const HUNYUAN_FACE_COUNT_OPTIONS = [
+  { id: '1.5m', label: '1.5m', value: 1_500_000 },
+  { id: '1m', label: '1m', value: 1_000_000 },
+  { id: '500k', label: '500k', value: 500_000 },
+  { id: '50k', label: '50k', value: 50_000 },
+]
+
+export const HUNYUAN_DEFAULT_FACE_COUNT = HUNYUAN_FACE_COUNT_OPTIONS[0].value
+
+/**
  * 统计已上传槽位数量。
  * Counts filled multi-view slots.
  */

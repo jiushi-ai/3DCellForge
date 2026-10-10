@@ -405,6 +405,7 @@ function App() {
     const providers = getProviderPlan(requestedProvider)
     const errors = []
     const multiViewImages = Array.isArray(options.multiViewImages) ? options.multiViewImages : undefined
+    const faceCount = options.faceCount
 
     for (const provider of providers) {
       const label = getProviderLabel(provider)
@@ -474,6 +475,7 @@ function App() {
           prompt: multiViewImages?.length ? undefined : getGenerationPrompt(customCell),
           modelId: provider === 'fal' ? settings.falModelId : undefined,
           multiViewImages,
+          faceCount,
         })
 
         updateCustomCell(customCell.id, (cell) => ({
@@ -661,7 +663,7 @@ function App() {
    * 处理 Hunyuan 多视图上传：正图为主图，其余视角写入 MultiViewImages。
    * Handles Hunyuan multi-view upload: front as primary image, others as MultiViewImages.
    */
-  async function handleMultiViewUpload(slotFiles) {
+  async function handleMultiViewUpload(slotFiles, options = {}) {
     const validation = validateMultiViewSlots(slotFiles)
     if (!validation.ok) {
       setToast(validation.message)
@@ -672,6 +674,7 @@ function App() {
       return
     }
 
+    const faceCount = Number(options.faceCount) || undefined
     setMultiUploadBusy(true)
     let customCell = null
     try {
@@ -702,7 +705,7 @@ function App() {
         requestedProvider: 'hunyuan',
         status: 'uploading',
         progress: 0,
-        message: `Sending ${multiViewImages.length + 1} views to Hunyuan.`,
+        message: `Sending ${multiViewImages.length + 1} views to Hunyuan${faceCount ? ` (FaceCount ${faceCount})` : ''}.`,
       }
 
       const nextCustomCells = [customCell, ...customCells].slice(0, 8)
@@ -715,7 +718,10 @@ function App() {
       setActivePanel('Library')
       setMultiUploadOpen(false)
 
-      await generateCustomCellModel(customCell, generationUrl, frontFile.name, 'hunyuan', { multiViewImages })
+      await generateCustomCellModel(customCell, generationUrl, frontFile.name, 'hunyuan', {
+        multiViewImages,
+        faceCount,
+      })
     } catch (error) {
       console.error(error)
       if (customCell) {

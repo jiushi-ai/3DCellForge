@@ -2,6 +2,8 @@ import { useMemo, useRef, useState } from 'react'
 import { Images, Upload, X } from 'lucide-react'
 
 import {
+  HUNYUAN_DEFAULT_FACE_COUNT,
+  HUNYUAN_FACE_COUNT_OPTIONS,
   HUNYUAN_MULTI_VIEW_MAX_IMAGES,
   HUNYUAN_MULTI_VIEW_MIN_IMAGES,
   HUNYUAN_MULTI_VIEW_SLOTS,
@@ -9,13 +11,16 @@ import {
   validateMultiViewSlots,
 } from '../config/hunyuanMultiView.js'
 
+const SLOT_BY_ID = Object.fromEntries(HUNYUAN_MULTI_VIEW_SLOTS.map((slot) => [slot.id, slot]))
+
 /**
- * 混元多视图上传弹层：按正/侧/背/顶等槽位选图后提交。
- * Hunyuan multi-view upload modal: pick angled slots then submit.
+ * 混元多视图上传弹层：官网式空间布局 + 模型面数 FaceCount。
+ * Hunyuan multi-view modal with spatial layout and FaceCount control.
  */
 export function MultiUploadModal({ open, onClose, onSubmit, busy = false }) {
   const [slotFiles, setSlotFiles] = useState({})
   const [slotPreviews, setSlotPreviews] = useState({})
+  const [faceCount, setFaceCount] = useState(HUNYUAN_DEFAULT_FACE_COUNT)
   const [error, setError] = useState('')
   const activeSlotRef = useRef('front')
   const fileInputRef = useRef(null)
@@ -41,10 +46,7 @@ export function MultiUploadModal({ open, onClose, onSubmit, busy = false }) {
     }
 
     const previewUrl = URL.createObjectURL(file)
-    setSlotFiles((current) => {
-      const next = { ...current, [slotId]: file }
-      return next
-    })
+    setSlotFiles((current) => ({ ...current, [slotId]: file }))
     setSlotPreviews((current) => {
       if (current[slotId]) URL.revokeObjectURL(current[slotId])
       return { ...current, [slotId]: previewUrl }
@@ -73,15 +75,49 @@ export function MultiUploadModal({ open, onClose, onSubmit, busy = false }) {
       return
     }
     setError('')
-    await onSubmit?.(slotFiles)
+    await onSubmit?.(slotFiles, { faceCount })
   }
 
   function handleClose() {
     Object.values(slotPreviews).forEach((url) => URL.revokeObjectURL(url))
     setSlotFiles({})
     setSlotPreviews({})
+    setFaceCount(HUNYUAN_DEFAULT_FACE_COUNT)
     setError('')
     onClose?.()
+  }
+
+  function renderSlot(slotId, extraClass = '') {
+    const slot = SLOT_BY_ID[slotId]
+    if (!slot) return null
+    return (
+      <div className={`multi-upload-slot slot-${slot.id} ${extraClass}`.trim()}>
+        <button
+          type="button"
+          className={slotPreviews[slot.id] ? 'multi-upload-card filled' : 'multi-upload-card'}
+          onClick={() => openPicker(slot.id)}
+          disabled={busy}
+          title={`Upload ${slot.labelEn}`}
+        >
+          {slotPreviews[slot.id] ? (
+            <img src={slotPreviews[slot.id]} alt={slot.labelEn} />
+          ) : (
+            <span className="multi-upload-placeholder">
+              <Upload size={14} />
+              <em>上传{slot.labelZh}</em>
+            </span>
+          )}
+        </button>
+        <div className="multi-upload-slot-meta">
+          <span>{slot.labelZh} / {slot.labelEn}{slot.required ? ' *' : ''}</span>
+          {slotFiles[slot.id] ? (
+            <button type="button" className="multi-upload-clear" onClick={() => clearSlot(slot.id)} disabled={busy}>
+              Clear
+            </button>
+          ) : null}
+        </div>
+      </div>
+    )
   }
 
   return (
@@ -89,9 +125,9 @@ export function MultiUploadModal({ open, onClose, onSubmit, busy = false }) {
       <div className="multi-upload-modal">
         <header className="multi-upload-header">
           <div>
-            <strong>Add Multi-view</strong>
+            <strong>添加多视图 / Add Multi-view</strong>
             <small>
-              Hunyuan only · Min {HUNYUAN_MULTI_VIEW_MIN_IMAGES} · Max {HUNYUAN_MULTI_VIEW_MAX_IMAGES} · Model 3.1
+              Hunyuan · Min {HUNYUAN_MULTI_VIEW_MIN_IMAGES} · Max {HUNYUAN_MULTI_VIEW_MAX_IMAGES} · Model 3.1
             </small>
           </div>
           <button type="button" className="multi-upload-close" onClick={handleClose} disabled={busy} aria-label="Close">
@@ -99,38 +135,47 @@ export function MultiUploadModal({ open, onClose, onSubmit, busy = false }) {
           </button>
         </header>
 
-        <div className="multi-upload-stage">
-          {HUNYUAN_MULTI_VIEW_SLOTS.map((slot) => (
-            <div key={slot.id} className={`multi-upload-slot slot-${slot.id}`}>
+        <div className="multi-upload-toolbar">
+          <span>模型面数 / Face Count</span>
+          <div className="multi-upload-face-count" role="group" aria-label="Face count">
+            {HUNYUAN_FACE_COUNT_OPTIONS.map((option) => (
               <button
+                key={option.id}
                 type="button"
-                className={slotPreviews[slot.id] ? 'multi-upload-card filled' : 'multi-upload-card'}
-                onClick={() => openPicker(slot.id)}
+                className={faceCount === option.value ? 'active' : ''}
+                onClick={() => setFaceCount(option.value)}
                 disabled={busy}
-                title={`Upload ${slot.labelEn}`}
               >
-                {slotPreviews[slot.id] ? (
-                  <img src={slotPreviews[slot.id]} alt={slot.labelEn} />
-                ) : (
-                  <span className="multi-upload-placeholder">
-                    <Upload size={14} />
-                  </span>
-                )}
+                {option.label}
               </button>
-              <div className="multi-upload-slot-meta">
-                <span>{slot.labelZh} / {slot.labelEn}{slot.required ? ' *' : ''}</span>
-                {slotFiles[slot.id] ? (
-                  <button type="button" className="multi-upload-clear" onClick={() => clearSlot(slot.id)} disabled={busy}>
-                    Clear
-                  </button>
-                ) : null}
-              </div>
-            </div>
-          ))}
+            ))}
+          </div>
+        </div>
+
+        <div className="multi-upload-compass" aria-label="Multi-view spatial layout">
+          <div className="multi-upload-guide" aria-hidden="true">
+            <span className="multi-upload-guide-core" />
+            <span className="multi-upload-guide-ring" />
+            <span className="multi-upload-guide-line line-n" />
+            <span className="multi-upload-guide-line line-s" />
+            <span className="multi-upload-guide-line line-e" />
+            <span className="multi-upload-guide-line line-w" />
+            <span className="multi-upload-guide-line line-ne" />
+            <span className="multi-upload-guide-line line-nw" />
+          </div>
+
+          {renderSlot('top', 'pos-top')}
+          {renderSlot('left_front', 'pos-left-front')}
+          {renderSlot('front', 'pos-front')}
+          {renderSlot('right_front', 'pos-right-front')}
+          {renderSlot('left', 'pos-left')}
+          {renderSlot('right', 'pos-right')}
+          {renderSlot('back', 'pos-back')}
+          {renderSlot('bottom', 'pos-bottom')}
         </div>
 
         <footer className="multi-upload-footer">
-          <small>{filledCount} / {HUNYUAN_MULTI_VIEW_MAX_IMAGES} views selected</small>
+          <small>{filledCount} / {HUNYUAN_MULTI_VIEW_MAX_IMAGES} views selected · FaceCount {faceCount.toLocaleString()}</small>
           {error ? <p className="multi-upload-error">{error}</p> : null}
           <div className="multi-upload-actions">
             <button type="button" className="drawer-secondary" onClick={handleClose} disabled={busy}>

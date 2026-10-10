@@ -94,7 +94,7 @@ describe('hunyuan cloud utility functions', () => {
     assert.equal(getHunyuanCloudProgress('success'), 100)
 
     const withMulti = buildHunyuanCloudSubmitFields(
-      { pbr: true },
+      { pbr: true, faceCount: 1_500_000 },
       {
         defaultModel: '3.0',
         imageBase64: 'primarybase64',
@@ -107,6 +107,7 @@ describe('hunyuan cloud utility functions', () => {
     )
     assert.equal(withMulti.Model, '3.1')
     assert.equal(withMulti.ImageBase64, 'primarybase64')
+    assert.equal(withMulti.FaceCount, 1_500_000)
     assert.deepEqual(withMulti.MultiViewImages, [
       { ViewType: 'left', ViewImageBase64: 'leftbase64' },
       { ViewType: 'back', ViewImageBase64: 'backbase64' },

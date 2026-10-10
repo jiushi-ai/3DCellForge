@@ -57,6 +57,7 @@ export async function create3dGeneration({
   prompt,
   modelId,
   multiViewImages,
+  faceCount,
 }) {
   const response = await requestLocalApi('/api/3d/generate', {
     method: 'POST',
@@ -68,6 +69,7 @@ export async function create3dGeneration({
       prompt,
       modelId,
       multiViewImages,
+      faceCount,
     }),
   })
 

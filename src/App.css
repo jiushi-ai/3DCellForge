@@ -5485,7 +5485,7 @@ input:focus-visible + i {
   }
 }
 
-/* Hunyuan multi-view upload modal */
+/* Hunyuan multi-view upload modal (spatial compass layout) */
 .add-image.upload-multi:disabled,
 .add-image.upload-multi.is-disabled {
   opacity: 0.45;
@@ -5499,23 +5499,24 @@ input:focus-visible + i {
   z-index: 80;
   display: grid;
   place-items: center;
-  padding: 24px;
+  padding: 20px;
   background: rgba(28, 24, 20, 0.48);
   backdrop-filter: blur(4px);
 }
 
 .multi-upload-modal {
-  width: min(760px, 100%);
-  max-height: min(90vh, 820px);
+  width: min(640px, 100%);
+  max-height: min(92vh, 900px);
   overflow: auto;
   border: 1px solid rgba(255, 255, 255, 0.35);
   border-radius: 18px;
-  background: linear-gradient(165deg, rgba(252, 248, 241, 0.96), rgba(236, 228, 216, 0.94));
+  background: linear-gradient(165deg, rgba(252, 248, 241, 0.97), rgba(236, 228, 216, 0.95));
   box-shadow: 0 24px 60px rgba(40, 32, 24, 0.28);
 }
 
 .multi-upload-header,
-.multi-upload-footer {
+.multi-upload-footer,
+.multi-upload-toolbar {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -5523,7 +5524,8 @@ input:focus-visible + i {
   padding: 14px 18px;
 }
 
-.multi-upload-header {
+.multi-upload-header,
+.multi-upload-toolbar {
   border-bottom: 1px solid rgba(112, 101, 84, 0.14);
 }
 
@@ -5534,7 +5536,8 @@ input:focus-visible + i {
 
 .multi-upload-header small,
 .multi-upload-footer small,
-.multi-upload-slot-meta {
+.multi-upload-slot-meta,
+.multi-upload-toolbar > span {
   color: #766a5f;
   font-size: 11px;
 }
@@ -5550,22 +5553,109 @@ input:focus-visible + i {
   cursor: pointer;
 }
 
-.multi-upload-stage {
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 12px;
-  padding: 16px 18px;
+.multi-upload-face-count {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
 }
+
+.multi-upload-face-count button {
+  min-width: 52px;
+  min-height: 28px;
+  padding: 4px 10px;
+  border: 1px solid rgba(112, 101, 84, 0.2);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.55);
+  color: #5f544b;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.multi-upload-face-count button.active {
+  color: #294f88;
+  border-color: rgba(82, 142, 170, 0.55);
+  background: rgba(228, 242, 248, 0.9);
+}
+
+/* 官网式五行布局：顶 / 左45·正·右45 / 左·引导·右 / 背 / 底，槽位缩小避免重叠 */
+.multi-upload-compass {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1fr);
+  grid-template-rows: auto auto minmax(96px, 1fr) auto auto;
+  grid-template-areas:
+    ". top ."
+    "left-front front right-front"
+    "left guide right"
+    ". back ."
+    ". bottom .";
+  align-items: center;
+  justify-items: center;
+  gap: 6px 10px;
+  width: min(520px, 100%);
+  margin: 10px auto 6px;
+  padding: 4px 12px 8px;
+  box-sizing: border-box;
+}
+
+.multi-upload-guide {
+  grid-area: guide;
+  position: relative;
+  width: min(112px, 100%);
+  aspect-ratio: 1;
+  pointer-events: none;
+}
+
+.multi-upload-guide-core {
+  position: absolute;
+  inset: 12%;
+  border-radius: 14px;
+  background:
+    radial-gradient(circle at 50% 42%, rgba(120, 170, 210, 0.35), transparent 55%),
+    linear-gradient(160deg, rgba(90, 110, 130, 0.28), rgba(50, 60, 75, 0.45));
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.18);
+}
+
+.multi-upload-guide-ring {
+  position: absolute;
+  inset: 0;
+  border: 1px dashed rgba(112, 101, 84, 0.28);
+  border-radius: 50%;
+}
+
+.multi-upload-guide-line {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 1px;
+  height: 46%;
+  background: rgba(112, 101, 84, 0.22);
+  transform-origin: top center;
+}
+
+.multi-upload-guide-line.line-n { transform: translate(-50%, 0) rotate(0deg); }
+.multi-upload-guide-line.line-s { transform: translate(-50%, 0) rotate(180deg); }
+.multi-upload-guide-line.line-e { transform: translate(-50%, 0) rotate(90deg); }
+.multi-upload-guide-line.line-w { transform: translate(-50%, 0) rotate(-90deg); }
+.multi-upload-guide-line.line-ne { transform: translate(-50%, 0) rotate(45deg); height: 40%; }
+.multi-upload-guide-line.line-nw { transform: translate(-50%, 0) rotate(-45deg); height: 40%; }
 
 .multi-upload-slot {
   display: grid;
-  gap: 6px;
+  gap: 2px;
   justify-items: center;
+  width: min(92px, 100%);
 }
 
-.multi-upload-slot.slot-front {
-  grid-column: 2 / 4;
-}
+.multi-upload-slot.pos-top { grid-area: top; }
+.multi-upload-slot.pos-left-front { grid-area: left-front; }
+.multi-upload-slot.pos-front { grid-area: front; }
+.multi-upload-slot.pos-right-front { grid-area: right-front; }
+.multi-upload-slot.pos-left { grid-area: left; }
+.multi-upload-slot.pos-right { grid-area: right; }
+.multi-upload-slot.pos-back { grid-area: back; }
+.multi-upload-slot.pos-bottom { grid-area: bottom; }
 
 .multi-upload-card {
   width: 100%;
@@ -5573,15 +5663,20 @@ input:focus-visible + i {
   display: grid;
   place-items: center;
   overflow: hidden;
-  border: 1px dashed rgba(112, 101, 84, 0.35);
-  border-radius: 14px;
-  background: rgba(255, 255, 255, 0.55);
+  border: 1px dashed rgba(112, 101, 84, 0.4);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.72);
   cursor: pointer;
+}
+
+.multi-upload-slot.pos-front .multi-upload-card {
+  border-color: rgba(82, 142, 170, 0.55);
+  box-shadow: 0 0 0 1px rgba(82, 142, 170, 0.12);
 }
 
 .multi-upload-card.filled {
   border-style: solid;
-  border-color: rgba(82, 142, 170, 0.45);
+  border-color: rgba(82, 142, 170, 0.55);
 }
 
 .multi-upload-card img {
@@ -5591,13 +5686,29 @@ input:focus-visible + i {
 }
 
 .multi-upload-placeholder {
+  display: grid;
+  justify-items: center;
+  gap: 2px;
   color: #8a7d70;
+  padding: 4px;
+  text-align: center;
+}
+
+.multi-upload-placeholder em {
+  font-style: normal;
+  font-size: 9px;
+  line-height: 1.15;
 }
 
 .multi-upload-slot-meta {
   display: flex;
   align-items: center;
-  gap: 8px;
+  justify-content: center;
+  gap: 4px;
+  min-height: 14px;
+  text-align: center;
+  font-size: 10px;
+  line-height: 1.2;
 }
 
 .multi-upload-clear {
@@ -5628,11 +5739,22 @@ input:focus-visible + i {
 }
 
 @media (max-width: 720px) {
-  .multi-upload-stage {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+  .multi-upload-compass {
+    width: 100%;
+    gap: 4px 6px;
+    padding: 2px 8px 6px;
   }
 
-  .multi-upload-slot.slot-front {
-    grid-column: 1 / -1;
+  .multi-upload-slot {
+    width: min(78px, 100%);
+  }
+
+  .multi-upload-guide {
+    width: min(88px, 100%);
+  }
+
+  .multi-upload-placeholder em,
+  .multi-upload-slot-meta {
+    font-size: 8px;
   }
 }
