@@ -5579,11 +5579,12 @@ input:focus-visible + i {
   background: rgba(228, 242, 248, 0.9);
 }
 
-/* 官网式五行布局：顶 / 左45·正·右45 / 左·引导·右 / 背 / 底，槽位缩小避免重叠 */
+/* 官网式五行布局：顶 / 左45·正·右45 / 左·示意模型·右 / 背 / 底 + 方位指向线 */
 .multi-upload-compass {
+  position: relative;
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1fr);
-  grid-template-rows: auto auto minmax(96px, 1fr) auto auto;
+  grid-template-rows: auto auto minmax(120px, 1fr) auto auto;
   grid-template-areas:
     ". top ."
     "left-front front right-front"
@@ -5592,60 +5593,55 @@ input:focus-visible + i {
     ". bottom .";
   align-items: center;
   justify-items: center;
-  gap: 6px 10px;
-  width: min(520px, 100%);
+  gap: 8px 12px;
+  width: min(540px, 100%);
   margin: 10px auto 6px;
-  padding: 4px 12px 8px;
+  padding: 6px 14px 10px;
   box-sizing: border-box;
+}
+
+.multi-upload-rays {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  overflow: visible;
+}
+
+.multi-upload-ray {
+  stroke: rgba(112, 101, 84, 0.38);
+  stroke-width: 0.55;
+  stroke-linecap: round;
 }
 
 .multi-upload-guide {
   grid-area: guide;
   position: relative;
-  width: min(112px, 100%);
+  z-index: 1;
+  width: min(148px, 100%);
   aspect-ratio: 1;
   pointer-events: none;
+  display: grid;
+  place-items: center;
 }
 
-.multi-upload-guide-core {
-  position: absolute;
-  inset: 12%;
-  border-radius: 14px;
-  background:
-    radial-gradient(circle at 50% 42%, rgba(120, 170, 210, 0.35), transparent 55%),
-    linear-gradient(160deg, rgba(90, 110, 130, 0.28), rgba(50, 60, 75, 0.45));
-  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.18);
+.multi-upload-guide-img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  filter: drop-shadow(0 6px 14px rgba(40, 32, 24, 0.18));
+  user-select: none;
 }
-
-.multi-upload-guide-ring {
-  position: absolute;
-  inset: 0;
-  border: 1px dashed rgba(112, 101, 84, 0.28);
-  border-radius: 50%;
-}
-
-.multi-upload-guide-line {
-  position: absolute;
-  left: 50%;
-  top: 50%;
-  width: 1px;
-  height: 46%;
-  background: rgba(112, 101, 84, 0.22);
-  transform-origin: top center;
-}
-
-.multi-upload-guide-line.line-n { transform: translate(-50%, 0) rotate(0deg); }
-.multi-upload-guide-line.line-s { transform: translate(-50%, 0) rotate(180deg); }
-.multi-upload-guide-line.line-e { transform: translate(-50%, 0) rotate(90deg); }
-.multi-upload-guide-line.line-w { transform: translate(-50%, 0) rotate(-90deg); }
-.multi-upload-guide-line.line-ne { transform: translate(-50%, 0) rotate(45deg); height: 40%; }
-.multi-upload-guide-line.line-nw { transform: translate(-50%, 0) rotate(-45deg); height: 40%; }
 
 .multi-upload-slot {
+  position: relative;
+  z-index: 1;
   display: grid;
   gap: 2px;
   justify-items: center;
-  width: min(92px, 100%);
+  width: min(88px, 100%);
 }
 
 .multi-upload-slot.pos-top { grid-area: top; }
@@ -5741,16 +5737,16 @@ input:focus-visible + i {
 @media (max-width: 720px) {
   .multi-upload-compass {
     width: 100%;
-    gap: 4px 6px;
-    padding: 2px 8px 6px;
+    gap: 6px 8px;
+    padding: 4px 8px 8px;
   }
 
   .multi-upload-slot {
-    width: min(78px, 100%);
+    width: min(76px, 100%);
   }
 
   .multi-upload-guide {
-    width: min(88px, 100%);
+    width: min(112px, 100%);
   }
 
   .multi-upload-placeholder em,

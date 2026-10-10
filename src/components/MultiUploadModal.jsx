@@ -10,6 +10,20 @@ import {
   countFilledMultiViewSlots,
   validateMultiViewSlots,
 } from '../config/hunyuanMultiView.js'
+import multiViewDemo from '../assets/mutldemo.webp'
+
+/** 各槽位到中心示意模型的连线端点（viewBox 0–100）。 / Slot-to-demo ray endpoints in viewBox 0–100. */
+const MULTI_VIEW_RAYS = [
+  { id: 'top', x: 50, y: 7 },
+  { id: 'left_front', x: 17, y: 24 },
+  { id: 'front', x: 50, y: 24 },
+  { id: 'right_front', x: 83, y: 24 },
+  { id: 'left', x: 14, y: 48 },
+  { id: 'right', x: 86, y: 48 },
+  { id: 'back', x: 50, y: 72 },
+  { id: 'bottom', x: 50, y: 92 },
+]
+const MULTI_VIEW_RAY_CENTER = { x: 50, y: 48 }
 
 const SLOT_BY_ID = Object.fromEntries(HUNYUAN_MULTI_VIEW_SLOTS.map((slot) => [slot.id, slot]))
 
@@ -153,15 +167,26 @@ export function MultiUploadModal({ open, onClose, onSubmit, busy = false }) {
         </div>
 
         <div className="multi-upload-compass" aria-label="Multi-view spatial layout">
+          <svg
+            className="multi-upload-rays"
+            viewBox="0 0 100 100"
+            preserveAspectRatio="none"
+            aria-hidden="true"
+          >
+            {MULTI_VIEW_RAYS.map((ray) => (
+              <line
+                key={ray.id}
+                className={`multi-upload-ray ray-${ray.id}`}
+                x1={MULTI_VIEW_RAY_CENTER.x}
+                y1={MULTI_VIEW_RAY_CENTER.y}
+                x2={ray.x}
+                y2={ray.y}
+              />
+            ))}
+          </svg>
+
           <div className="multi-upload-guide" aria-hidden="true">
-            <span className="multi-upload-guide-core" />
-            <span className="multi-upload-guide-ring" />
-            <span className="multi-upload-guide-line line-n" />
-            <span className="multi-upload-guide-line line-s" />
-            <span className="multi-upload-guide-line line-e" />
-            <span className="multi-upload-guide-line line-w" />
-            <span className="multi-upload-guide-line line-ne" />
-            <span className="multi-upload-guide-line line-nw" />
+            <img className="multi-upload-guide-img" src={multiViewDemo} alt="" />
           </div>
 
           {renderSlot('top', 'pos-top')}

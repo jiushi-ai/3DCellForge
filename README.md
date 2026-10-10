@@ -108,6 +108,8 @@ API_HOST=127.0.0.1
 - C.1.7 Multi-view modal uses an official-style spatial layout (center guide + surrounding view slots)
 - C.1.8 Multi-view supports Face Count presets (1.5m/1m/500k/50k, default 1.5m) via OpenAI-compat `submit` field `FaceCount`
 - C.1.9 Multi-view compass layout fix: smaller slots; CSS Grid 5-row layout so top sits above left45/front/right45 (same row); back then bottom stacked without overlap
+- C.1.11 Multi-view center guide uses official-style demo model image (`mutldemo.webp`)
+- C.1.12 Multi-view draws orientation rays from each slot toward the center demo model
 
 Prefer the official **OpenAI-compatible** API (console API key). No local GPU required:
 
