@@ -36,9 +36,11 @@ import { BottomDeck } from './components/BottomDeck.jsx'
 import { CenterStage } from './components/CenterStage.jsx'
 import { DetailPanel } from './components/DetailPanel.jsx'
 import { LeftSidebar } from './components/LeftSidebar.jsx'
+import { MultiUploadModal } from './components/MultiUploadModal.jsx'
 import { StatusToast } from './components/StatusToast.jsx'
 import { StudioHeader } from './components/StudioHeader.jsx'
 import { WorkspaceDrawer } from './components/WorkspaceDrawer.jsx'
+import { HUNYUAN_MULTI_VIEW_SLOTS, validateMultiViewSlots } from './config/hunyuanMultiView.js'
 import './App.css'
 
 function mergeCustomModelRecords(primary = [], secondary = []) {
@@ -127,6 +129,8 @@ function App() {
   const [serverLogs, setServerLogs] = useState({ entries: [], file: '', size: 0 })
   const [projects, setProjects] = useState([])
   const [modelLibraryHydrated, setModelLibraryHydrated] = useState(false)
+  const [multiUploadOpen, setMultiUploadOpen] = useState(false)
+  const [multiUploadBusy, setMultiUploadBusy] = useState(false)
   const allCells = useMemo(() => getAllCells(customCells), [customCells])
   const latestUploadCell = useMemo(() => customCells.find((cell) => cell.custom && !cell.reference), [customCells])
   const refreshApiHealth = useCallback(async () => {
@@ -391,9 +395,16 @@ function App() {
     )))
   }
 
-  async function generateCustomCellModel(customCell, imageUrl, fileName, requestedProvider = settings.generationMode) {
+  async function generateCustomCellModel(
+    customCell,
+    imageUrl,
+    fileName,
+    requestedProvider = settings.generationMode,
+    options = {},
+  ) {
     const providers = getProviderPlan(requestedProvider)
     const errors = []
+    const multiViewImages = Array.isArray(options.multiViewImages) ? options.multiViewImages : undefined
 
     for (const provider of providers) {
       const label = getProviderLabel(provider)
@@ -442,13 +453,17 @@ function App() {
             progress: 0,
             modelUrl: '',
             rawModelUrl: '',
-            message: `Sending image to ${label}.`,
+            message: multiViewImages?.length
+              ? `Sending multi-view images to ${label}.`
+              : `Sending image to ${label}.`,
           },
         }))
         updateGenerationHistory(historyId, {
           status: 'uploading',
           progress: 0,
-          message: `Sending image to ${label}.`,
+          message: multiViewImages?.length
+            ? `Sending multi-view images to ${label}.`
+            : `Sending image to ${label}.`,
         })
         setToast(`Creating ${label} image-to-3D task`)
 
@@ -456,8 +471,9 @@ function App() {
           provider,
           imageDataUrl: imageUrl,
           fileName,
-          prompt: getGenerationPrompt(customCell),
+          prompt: multiViewImages?.length ? undefined : getGenerationPrompt(customCell),
           modelId: provider === 'fal' ? settings.falModelId : undefined,
+          multiViewImages,
         })
 
         updateCustomCell(customCell.id, (cell) => ({
@@ -638,6 +654,84 @@ function App() {
         }))
       }
       setToast(error instanceof Error ? error.message : 'Image-to-3D generation failed')
+    }
+  }
+
+  /**
+   * 处理 Hunyuan 多视图上传：正图为主图，其余视角写入 MultiViewImages。
+   * Handles Hunyuan multi-view upload: front as primary image, others as MultiViewImages.
+   */
+  async function handleMultiViewUpload(slotFiles) {
+    const validation = validateMultiViewSlots(slotFiles)
+    if (!validation.ok) {
+      setToast(validation.message)
+      return
+    }
+    if (settings.generationMode !== 'hunyuan') {
+      setToast('Multi Upload is only available when Provider is Hunyuan.')
+      return
+    }
+
+    setMultiUploadBusy(true)
+    let customCell = null
+    try {
+      setToast('Preparing multi-view images')
+      const frontFile = slotFiles.front
+      const { displayUrl, generationUrl } = await prepareImageForUpload(frontFile)
+      const thumbnailUrl = await createImageThumbnailDataUrl(displayUrl)
+
+      const multiViewImages = []
+      for (const slot of HUNYUAN_MULTI_VIEW_SLOTS) {
+        if (slot.apiRole !== 'multi' || !slotFiles[slot.id]) continue
+        const prepared = await prepareImageForUpload(slotFiles[slot.id])
+        multiViewImages.push({
+          ViewType: slot.viewType,
+          imageDataUrl: prepared.generationUrl,
+        })
+      }
+
+      customCell = createCustomCell(frontFile.name || 'multi-view.png', displayUrl, {
+        provider: 'hunyuan',
+        requestedProvider: 'hunyuan',
+        thumbnailUrl: thumbnailUrl || displayUrl,
+        type: 'Hunyuan multi-view asset',
+      })
+      customCell.generation = {
+        ...customCell.generation,
+        provider: 'hunyuan',
+        requestedProvider: 'hunyuan',
+        status: 'uploading',
+        progress: 0,
+        message: `Sending ${multiViewImages.length + 1} views to Hunyuan.`,
+      }
+
+      const nextCustomCells = [customCell, ...customCells].slice(0, 8)
+      persistCustomCells(nextCustomCells)
+      setCustomCells(nextCustomCells)
+      setUploadedImage({ name: frontFile.name, url: displayUrl })
+      setSelectedCell(customCell.id)
+      setSelectedOrganelle(getDefaultOrganelle(customCell.id, nextCustomCells))
+      setCompareCell(customCell.template)
+      setActivePanel('Library')
+      setMultiUploadOpen(false)
+
+      await generateCustomCellModel(customCell, generationUrl, frontFile.name, 'hunyuan', { multiViewImages })
+    } catch (error) {
+      console.error(error)
+      if (customCell) {
+        updateCustomCell(customCell.id, (cell) => ({
+          generation: {
+            ...cell.generation,
+            requestedProvider: 'hunyuan',
+            status: 'failed',
+            progress: null,
+            message: error instanceof Error ? error.message : 'Multi-view generation failed.',
+          },
+        }))
+      }
+      setToast(error instanceof Error ? error.message : 'Multi-view generation failed')
+    } finally {
+      setMultiUploadBusy(false)
     }
   }
 
@@ -1213,6 +1307,7 @@ function App() {
               generationMode={settings.generationMode}
               onGenerationModeChange={(generationMode) => setSettings((current) => ({ ...current, generationMode }))}
               onUploadImage={handleUploadImage}
+              onOpenMultiUpload={() => setMultiUploadOpen(true)}
               compareCell={compareCell}
               customCells={customCells}
               onCompare={handleOpenCompare}
@@ -1222,6 +1317,15 @@ function App() {
           </div>
         </div>
       </motion.div>
+
+      <MultiUploadModal
+        open={multiUploadOpen}
+        busy={multiUploadBusy}
+        onClose={() => {
+          if (!multiUploadBusy) setMultiUploadOpen(false)
+        }}
+        onSubmit={handleMultiViewUpload}
+      />
     </main>
   )
 }

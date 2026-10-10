@@ -51,14 +51,14 @@ export const GENERATION_PROVIDER_OPTIONS = [
   { id: 'auto', label: 'Auto', description: 'Hyper3D first, then Tripo, Fal, Hunyuan, and JS Depth backup.' },
   { id: 'tripo', label: 'Tripo', description: 'Cloud generation.' },
   { id: 'fal', label: 'Fal', description: 'Fal queue with selectable 3D models.' },
-  { id: 'hunyuan', label: 'Hunyuan', description: 'Local Hunyuan3D server.' },
+  { id: 'hunyuan', label: 'Hunyuan', description: 'Tencent Hunyuan AI3D cloud (API key), else local server.' },
 ]
 export const GENERATION_PROVIDER_IDS = new Set(GENERATION_PROVIDER_OPTIONS.map((provider) => provider.id))
 export const GENERATION_MODE_OPTIONS = [
   { id: 'rodin', label: 'Hyper3D', description: 'Hyper3D Rodin GLB generation.' },
   { id: 'tripo', label: 'Tripo', description: 'Cloud GLB generation.' },
   { id: 'fal', label: 'Fal', description: 'Fal.ai queue with selectable model.' },
-  { id: 'hunyuan', label: 'Hunyuan', description: 'Local Hunyuan3D GLB generation.' },
+  { id: 'hunyuan', label: 'Hunyuan', description: 'Tencent Hunyuan AI3D cloud GLB, or local Hunyuan3D fallback.' },
   { id: 'cinematic', label: 'JS Depth', description: 'Browser-side image relief with layered PNG fallback.' },
   { id: 'auto', label: 'Auto', description: 'Hyper3D, Tripo, Fal, Hunyuan, then JS Depth fallback.' },
   { id: 'local', label: 'Local GLB', description: 'Import an existing GLB or GLTF file.' },

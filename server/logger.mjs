@@ -13,6 +13,7 @@ const SENSITIVE_KEYS = new Set([
   'TRIPO_API_KEY',
   'RODIN_API_KEY',
   'FAL_API_KEY',
+  'HUNYUAN_API_KEY',
   'OPENAI_API_KEY',
 ])
 

@@ -1,11 +1,15 @@
 import { useRef } from 'react'
-import { Box, Image, Upload } from 'lucide-react'
+import { Box, Image, Images, Upload } from 'lucide-react'
 
 import { GENERATION_MODE_OPTIONS } from '../config/appConfig.js'
 import { MICROSCOPE_IMAGES } from '../domain/cellData.js'
 import { getCell } from '../domain/cellCatalog.js'
 import { CellThumb } from './CellThumb.jsx'
 
+/**
+ * 底部素材与 Provider 选择区，含单图上传与 Hunyuan 多视图入口。
+ * Bottom asset/provider deck with single upload and Hunyuan multi-view entry.
+ */
 export function BottomDeck({
   selectedCell,
   selectedMicroscope,
@@ -17,6 +21,7 @@ export function BottomDeck({
   customCells,
   latestUploadCell,
   onUploadImage,
+  onOpenMultiUpload,
   onCompare,
   onOpenGenerationCell,
   onNotify,
@@ -25,10 +30,19 @@ export function BottomDeck({
   const selected = getCell(selectedCell, customCells)
   const compareTarget = getCell(compareCell, customCells)
   const uploadAccept = generationMode === 'local' ? '.glb,.gltf,model/gltf-binary,model/gltf+json' : 'image/*,.glb,.gltf,model/gltf-binary,model/gltf+json'
+  const multiUploadEnabled = generationMode === 'hunyuan'
 
   function handleMicroscopeSelect(item) {
     setSelectedMicroscope(item.label)
     onNotify(item.note)
+  }
+
+  function handleMultiUploadClick() {
+    if (!multiUploadEnabled) {
+      onNotify('Multi Upload is only available when Provider is Hunyuan.')
+      return
+    }
+    onOpenMultiUpload?.()
   }
 
   return (
@@ -36,7 +50,7 @@ export function BottomDeck({
       <div className="panel media-panel">
         <header className="panel-title">
           <span>Asset Source</span>
-          <small>{latestUploadCell ? 5 : 4}</small>
+          <small>{latestUploadCell ? 6 : 5}</small>
         </header>
         <div className="generation-mode-row">
           <span>Provider</span>
@@ -85,16 +99,38 @@ export function BottomDeck({
                 <Upload size={16} />
                 New Upload
               </button>
+              <button
+                type="button"
+                className={multiUploadEnabled ? 'add-image upload-multi' : 'add-image upload-multi is-disabled'}
+                onClick={handleMultiUploadClick}
+                disabled={!multiUploadEnabled}
+                title={multiUploadEnabled ? 'Upload multi-view images for Hunyuan' : 'Switch Provider to Hunyuan to enable Multi Upload'}
+              >
+                <Images size={16} />
+                New Multi Upload
+              </button>
             </>
           ) : (
-            <button
-              type="button"
-              className="add-image"
-              onClick={() => fileInputRef.current?.click()}
-            >
-              <Upload size={16} />
-              Add Image / GLB
-            </button>
+            <>
+              <button
+                type="button"
+                className="add-image"
+                onClick={() => fileInputRef.current?.click()}
+              >
+                <Upload size={16} />
+                Add Image / GLB
+              </button>
+              <button
+                type="button"
+                className={multiUploadEnabled ? 'add-image upload-multi' : 'add-image upload-multi is-disabled'}
+                onClick={handleMultiUploadClick}
+                disabled={!multiUploadEnabled}
+                title={multiUploadEnabled ? 'Upload multi-view images for Hunyuan' : 'Switch Provider to Hunyuan to enable Multi Upload'}
+              >
+                <Images size={16} />
+                New Multi Upload
+              </button>
+            </>
           )}
           <input
             ref={fileInputRef}

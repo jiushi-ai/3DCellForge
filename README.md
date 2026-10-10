@@ -39,7 +39,7 @@ Open the demo video: [Demo MP4](docs/demo/3DCellForge-demo-2026-05-10.mp4)
 - Framer Motion
 - Tripo API optional backend
 - Fal.ai optional backend
-- Hunyuan3D local API optional backend
+- Tencent Hunyuan AI3D official cloud API (OpenAI-compatible) / local Hunyuan3D optional backend
 
 ## Quick Start
 
@@ -48,7 +48,7 @@ npm install
 npm run dev
 ```
 
-Open the Vite URL shown in the terminal.
+Open the Vite URL shown in the terminal. `npm run dev` starts the local Node API (`http://127.0.0.1:8787`) when it is not already running. You can also start it with `npm run dev:api`. Hunyuan / Tripo / Fal / Hyper3D cloud generation all go through this API; without it the UI shows `Failed to fetch`.
 
 ## Workbench Workflow
 
@@ -89,19 +89,56 @@ Then set:
 TRIPO_API_KEY=your_tripo_key
 FAL_API_KEY=your_fal_key
 RODIN_API_KEY=your_rodin_api_key
+HUNYUAN_API_KEY=your_hunyuan_ai3d_api_key
 OPENAI_API_KEY=your_openai_key
 API_HOST=127.0.0.1
 ```
 
 `OPENAI_API_KEY` enables optional image understanding through `/api/3d/analyze`. When configured, uploads are classified by vision into asset type, material focus, inspection notes, scene profile, tags, and a better image-to-3D prompt. Without it, the app keeps using local filename/metadata heuristics.
 
-For Hunyuan3D local backup mode, start your local Hunyuan3D API server and set:
+### Hunyuan (Tencent Hunyuan AI3D)
+
+#### C.1 Hunyuan multi-view upload (New Multi Upload)
+
+- C.1.1 Backend submit supports `MultiViewImages` (front `ImageBase64` + side/back/top views); multi-view forces Model `3.1`
+- C.1.2 Multi-view modal guides uploads by official slots (front / left 45° / right 45° / left / right / back / top / bottom)
+- C.1.3 Asset Source adds **New Multi Upload** next to New Upload; enabled only when Provider is Hunyuan, otherwise disabled
+- C.1.4 Frontend multi-view flow: min 2 images (front required), max 8
+- C.1.5 Unit tests cover MultiViewImages normalization and slot validation
+
+Prefer the official **OpenAI-compatible** API (console API key). No local GPU required:
+
+```bash
+HUNYUAN_API_KEY=sk-your_key
+HUNYUAN_CLOUD_BASE=https://api.ai3d.cloud.tencent.com
+HUNYUAN_MODEL=3.0
+```
+
+With `HUNYUAN_API_KEY` set, Hunyuan mode calls:
+
+```text
+POST https://api.ai3d.cloud.tencent.com/v1/ai3d/submit
+POST https://api.ai3d.cloud.tencent.com/v1/ai3d/query
+```
+
+Image-to-3D submits a data URL and does **not** send Prompt at the same time (official mutual exclusion). Query results prefer a GLB from `ResultFile3Ds`, then cache it under `.generated-models/`. Keep the key in server-side `.env.local` only. If Tencent docs mention migration to TokenHub, follow the latest official guidance.
+
+Without `HUNYUAN_API_KEY`, Hunyuan can fall back to a self-hosted Hunyuan3D API (usually needs a GPU):
 
 ```bash
 HUNYUAN_API_BASE=http://127.0.0.1:8081
 HUNYUAN_CREATE_PATH=/send
 HUNYUAN_STATUS_PATH=/status
 ```
+
+Expected local API shape:
+
+```text
+POST /send
+GET  /status/:uid
+```
+
+The status response can return either a remote model URL or a base64 GLB field such as `model_base64` / `glb_base64`.
 
 The 3D generation backend supports these provider paths:
 
@@ -110,7 +147,7 @@ Hyper3D  Hyper3D Rodin cloud generation only (default)
 Tripo    Tripo cloud generation only
 Fal      Fal.ai queue generation; model is selected in Settings
 Auto     Hyper3D first, then Tripo, Fal, Hunyuan, and JS Depth backup
-Hunyuan  Local Hunyuan3D generation only
+Hunyuan  Tencent Hunyuan AI3D cloud (API key); local Hunyuan3D if no key
 ```
 
 The upload panel exposes the full generation mode choice before picking a file:
@@ -119,7 +156,7 @@ The upload panel exposes the full generation mode choice before picking a file:
 Hyper3D     Hyper3D Rodin GLB generation
 Tripo       Tripo cloud GLB generation
 Fal         Fal.ai queue GLB generation
-Hunyuan     Local Hunyuan3D GLB generation
+Hunyuan     Tencent Hunyuan AI3D cloud / local Hunyuan3D GLB generation
 JS Depth    Browser-side image relief with layered PNG fallback
 Auto        Hyper3D, Tripo, Fal, Hunyuan, then JS Depth fallback
 Local GLB   Import an existing .glb or self-contained .gltf
@@ -132,15 +169,6 @@ Generated GLBs are cached by the Node backend under `.generated-models/`, so lat
 The frontend model library is saved in IndexedDB, so successful generated/imported model records survive page refreshes.
 
 You can also import a local `.glb` or self-contained `.gltf` from the `New Upload` button. Imported models become custom workspace models and are served from the same local cache.
-
-Expected Hunyuan3D local API shape:
-
-```text
-POST /send
-GET  /status/:uid
-```
-
-The status response can return either a remote model URL or a base64 GLB field such as `model_base64` / `glb_base64`. Base64 GLBs are cached under `.generated-models/` and served by the Node backend.
 
 Start the backend:
 

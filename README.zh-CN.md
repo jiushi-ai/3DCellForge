@@ -40,7 +40,7 @@ AI 驱动的交互式 3D 模型生成、检查和演示工作台。
 - Framer Motion
 - Tripo API 可选后端
 - Fal.ai 可选后端
-- Hunyuan3D 本地 API 可选后端
+- 腾讯混元生 3D 官方云 API（OpenAI 兼容）/ 本地 Hunyuan3D 可选后端
 
 ## 快速开始
 
@@ -49,7 +49,7 @@ npm install
 npm run dev
 ```
 
-打开终端里显示的 Vite 地址即可。
+打开终端里显示的 Vite 地址即可。`npm run dev` 会在需要时自动拉起本地 Node API（`http://127.0.0.1:8787`）。也可单独运行 `npm run dev:api`。Hunyuan / Tripo / Fal / Hyper3D 云端生成都依赖这个 API，否则前端会报 `Failed to fetch`。
 
 ## 工作台流程
 
@@ -90,19 +90,56 @@ cp .env.example .env.local
 TRIPO_API_KEY=your_tripo_key
 FAL_API_KEY=your_fal_key
 RODIN_API_KEY=your_rodin_api_key
+HUNYUAN_API_KEY=your_hunyuan_ai3d_api_key
 OPENAI_API_KEY=your_openai_key
 API_HOST=127.0.0.1
 ```
 
 `OPENAI_API_KEY` 会启用可选的图片理解接口 `/api/3d/analyze`。配置后，上传图片会先被视觉模型识别为资产类型、材质重点、检查重点、展示场景、标签，并生成更适合 image-to-3D 的提示词。没配置时，应用继续使用本地文件名和元数据规则，不会影响基础上传和生成。
 
-如需启用 Hunyuan3D 本地备用模式，先启动你的 Hunyuan3D API 服务，再设置：
+### Hunyuan（腾讯混元生 3D）
+
+#### C.1 Hunyuan 多视图上传（New Multi Upload）
+
+- C.1.1 后端 submit 支持 `MultiViewImages`（正图 `ImageBase64` + 侧/背/顶等视角），多视图强制 Model `3.1`
+- C.1.2 多视图弹层按官方槽位引导上传（正/左45°/右45°/左/右/背/顶/底）
+- C.1.3 Asset Source 在 New Upload 旁增加 **New Multi Upload**；仅 Provider=Hunyuan 可用，其它 Provider 灰色禁用
+- C.1.4 前端串联多视图生成：最少 2 张（必须含正图），最多 8 张
+- C.1.5 单测覆盖 MultiViewImages 规范化与槽位校验
+
+推荐使用官方 **OpenAI 兼容接口**（控制台 API Key），无需本地 GPU：
+
+```bash
+HUNYUAN_API_KEY=sk-your_key
+HUNYUAN_CLOUD_BASE=https://api.ai3d.cloud.tencent.com
+HUNYUAN_MODEL=3.0
+```
+
+配置 `HUNYUAN_API_KEY` 后，Hunyuan 模式会调用：
+
+```text
+POST https://api.ai3d.cloud.tencent.com/v1/ai3d/submit
+POST https://api.ai3d.cloud.tencent.com/v1/ai3d/query
+```
+
+图生 3D 时提交图片 data URL，且不与 Prompt 同时发送（官方互斥约束）。查询结果优先取 `ResultFile3Ds` 中的 GLB，并缓存到 `.generated-models/`。密钥只放服务端 `.env.local`，不会打进前端包。腾讯云文档若提示能力迁移至 TokenHub，以官方最新说明为准。
+
+未配置 `HUNYUAN_API_KEY` 时，可回退到本地 Hunyuan3D（需自行启动服务，通常需要 GPU）：
 
 ```bash
 HUNYUAN_API_BASE=http://127.0.0.1:8081
 HUNYUAN_CREATE_PATH=/send
 HUNYUAN_STATUS_PATH=/status
 ```
+
+本地 API 预期形式：
+
+```text
+POST /send
+GET  /status/:uid
+```
+
+状态接口可以返回远程模型 URL，也可以返回 `model_base64` / `glb_base64` 这类 base64 GLB 字段。
 
 3D 生成后端支持这些路径：
 
@@ -111,7 +148,7 @@ Hyper3D  只走 Hyper3D Rodin 云端生成，默认模式
 Tripo    只走 Tripo 云端生成
 Fal      只走 Fal.ai 队列生成，具体模型在 Settings 里选择
 Auto     先 Hyper3D，再 Tripo、Fal、Hunyuan，最后 JS Depth 兜底
-Hunyuan  只走本地 Hunyuan3D
+Hunyuan  腾讯混元生 3D 云端（API Key）；无 Key 时走本地 Hunyuan3D
 ```
 
 上传面板支持这些模式：
@@ -120,7 +157,7 @@ Hunyuan  只走本地 Hunyuan3D
 Hyper3D     Hyper3D Rodin GLB 生成
 Tripo       Tripo 云端 GLB 生成
 Fal         Fal.ai 队列 GLB 生成
-Hunyuan     本地 Hunyuan3D GLB 生成
+Hunyuan     腾讯混元生 3D 云端 / 本地 Hunyuan3D GLB 生成
 JS Depth    浏览器侧图片深度浮雕，WebGL 不可用时降级到透明 PNG 分层
 Auto        Hyper3D -> Tripo -> Fal -> Hunyuan -> JS Depth 依次降级
 Local GLB   导入已有 .glb 或自包含 .gltf
@@ -132,15 +169,6 @@ Rodin 上传使用 Hyper3D 的 multipart `/rodin` 任务接口，然后轮询 `/
 前端模型库会保存到 IndexedDB，所以生成或导入成功的模型记录刷新后仍会恢复。
 
 也可以从 `New Upload` 入口导入本地 `.glb` 或自包含 `.gltf`，导入后会成为自定义工作区模型。
-
-Hunyuan3D 本地 API 预期形式：
-
-```text
-POST /send
-GET  /status/:uid
-```
-
-状态接口可以返回远程模型 URL，也可以返回 `model_base64` / `glb_base64` 这类 base64 GLB 字段。base64 GLB 会被缓存到 `.generated-models/` 并由 Node 后端提供访问。
 
 启动后端：
 

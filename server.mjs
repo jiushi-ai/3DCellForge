@@ -1,5 +1,5 @@
 import http from 'node:http'
-import { API_HOST, API_PORT, FAL_API_KEY, HUNYUAN_API_BASE, RODIN_API_KEY, TRIPO_API_KEY } from './server/config.mjs'
+import { API_HOST, API_PORT, FAL_API_KEY, RODIN_API_KEY, TRIPO_API_KEY } from './server/config.mjs'
 import { assertLocalDiagnosticsRequest, readJsonBody, sendJson, setCorsHeaders } from './server/http-utils.mjs'
 import { createRequestId, logEvent, readRecentLogs, summarizeError, summarizePayload } from './server/logger.mjs'
 import { importLocalModel, proxyModel, serveLocalModel } from './server/model-store.mjs'
@@ -179,7 +179,12 @@ server.listen(API_PORT, API_HOST, () => {
   console.log(RODIN_API_KEY ? 'Rodin API key loaded from environment.' : 'RODIN_API_KEY is missing. Add it to .env.local.')
   console.log(FAL_API_KEY ? 'Fal API key loaded from environment.' : 'FAL_API_KEY is missing. Add it to .env.local.')
   console.log(getVisionHealth().configured ? 'Vision analysis provider configured.' : 'Vision analysis is not configured. Add OPENAI_API_KEY to .env.local.')
-  console.log(`Hunyuan3D local provider: ${HUNYUAN_API_BASE}`)
+  const hunyuanHealth = getHunyuanHealth()
+  if (hunyuanHealth.cloud) {
+    console.log(`Hunyuan AI3D cloud provider configured (${hunyuanHealth.cloudBase}, model ${hunyuanHealth.model}).`)
+  } else {
+    console.log(`Hunyuan3D local provider: ${hunyuanHealth.baseUrl} (set HUNYUAN_API_KEY for Tencent cloud).`)
+  }
   logEvent('info', 'api.start', {
     host: API_HOST,
     port: API_PORT,
@@ -187,7 +192,9 @@ server.listen(API_PORT, API_HOST, () => {
       tripo: Boolean(TRIPO_API_KEY),
       rodin: Boolean(RODIN_API_KEY),
       fal: Boolean(FAL_API_KEY),
-      hunyuan: Boolean(HUNYUAN_API_BASE),
+      hunyuan: hunyuanHealth.configured,
+      hunyuanMode: hunyuanHealth.mode,
+      hunyuanCloud: hunyuanHealth.cloud,
       vision: getVisionHealth().configured,
     },
   })

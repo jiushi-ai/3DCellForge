@@ -1,0 +1,13 @@
+---
+description: 已改用 chatlog/YYYY-MM-DD-chatN/ 归档。请遵循 chat-log.mdc；本文件仅作跳转，避免旧的单文件 chat-log-YYYY-MM-DD.md 格式。
+globs: chatlog/**/*.md
+alwaysApply: false
+---
+
+# 旧 chat-log 规则（已停用）
+
+会话归档请遵循 [chat-log.mdc](chat-log.mdc)（对话里也可 `@chat-log.md`）。
+
+新格式：`chatlog/YYYY-MM-DD-chatN/YYYY-MM-DD-chatN.md`，同目录放附图；正文分 `## chat ask` 与 `## chat rep`。
+
+不要再追加写入 `chat-log-YYYY-MM-DD.md`。
